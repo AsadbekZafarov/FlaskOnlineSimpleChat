@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #0b192e;
+        }
+        #chat-container {
+            display: flex;
+            flex: 1;
+            flex-direction: row;
+            height: 100%;
+        }
+        #messages-container {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #0b192e;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+        }
+        #form {
+            display: flex;
+            padding: 20px;
+            background: #517aa8;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #cccccc;
+            border-radius: 5px 0 0 5px;
+            outline: none;
+        }
+        button {
+            padding: 15px 30px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        li {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            list-style-type: none;
+            max-width: 70%;
+        }
+        li:last-child {
+            margin-bottom: 0;
+        }
+        .username {
+            font-weight: bold;
+            color: #007bff;
+            margin-right: 10px;
+        }
+        .emoji-drawer {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            width: 100px;
+            margin-bottom: 32px;
+            transition: opacity 0.2s;
+        }
+        .hidden {
+            opacity: 0;
+        }
+        .emoji {
+            text-align: center;
+            font-size: 24px;
+            padding: 8px;
+        }
+        .emoji:hover {
+            cursor: pointer;
+        }
+        #online-users-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            background: #517aa8;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+        }
+        #online-users {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background: #0b192e;
+            border-radius: 10px;
+            color: white;
+        }
+        #online-users ul {
+            padding: 0;
+            margin: 0;
+            list-style-type: none;
+        }
+        #online-users li {
+            background: #517aa8;
+            border-radius: 5px;
+            padding: 5px 10px;
+            margin-bottom: 5px;
+            color: white;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function () {
+            var socket = io();
+            var urlParams = new URLSearchParams(window.location.search);
+            var username = urlParams.get('username') || "";
+
+            // Emit join event when a user joins
+            socket.emit('join', username);
+
+            $('form').submit(function() {
+                var message = $('#input').val();
+                socket.emit('message', {'username': username, 'message': message});
+                $('#input').val('');
+                return false;
+            });
+
+            socket.on('message', function(msg){
+                $('#messages').append($('<li>').html('<span class="username">' + msg.username + ':</span> ' + msg.message));
+                $('#messages').scrollTop($('#messages')[0].scrollHeight);
+            });
+
+            // Listen for onlineUsers event
+            socket.on('onlineUsers', function(users){
+                $('#online-users').html('<ul>' + users.map(user => '<li>' + user + '</li>').join('') + '</ul>');
+            });
+        });
+
+        function addEmoji(emoji) {
+            let inputEle = document.getElementById('input');
+            inputEle.value += emoji;
+        }
+
+        function toggleEmojiDrawer() {
+            let drawer = document.getElementById('drawer');
+            if (drawer.classList.contains('hidden')) {
+                drawer.classList.remove('hidden');
+            } else {
+                drawer.classList.add('hidden');
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="messages-container">
+            <ul id="messages"></ul>
+            <form id="form" action="">
+                <input id="input" autocomplete="off" placeholder="Type your message..." />
+                <button type="submit"><i class="fas fa-paper-plane"></i></button>
+            </form>
+            <button onclick="toggleEmojiDrawer()">Emojis</button>
+            <div id="drawer" class="emoji-drawer hidden"> 
+                <div class="emoji" onclick="addEmoji('😀')">😀</div>
+                <div class="emoji" onclick="addEmoji('😃')">😃</div>
+                <div class="emoji" onclick="addEmoji('😄')">😄</div>
+                <div class="emoji" onclick="addEmoji('😁')">😁</div>
+                <div class="emoji" onclick="addEmoji('😆')">😆</div>
+                <div class="emoji" onclick="addEmoji('🔥')">🔥</div>
+                <div class="emoji" onclick="addEmoji('✅')">✅</div>
+                <div class="emoji" onclick="addEmoji('👌')">👌</div>
+                <div class="emoji" onclick="addEmoji('👋')">👋</div>
+                <div class="emoji" onclick="addEmoji('😉')">😉</div>
+                <div class="emoji" onclick="addEmoji('🆗')">🆗</div>
+                <div class="emoji" onclick="addEmoji('👍')">👍</div>
+            </div>
+        </div>
+        <div id="online-users-container">
+            <h3>Online Users</h3>
+            <div id="online-users"></div>
+        </div>
+    </div>
+</body>
+</html>
